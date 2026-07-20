@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#171717" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="谷子收纳" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>谷子收纳</title>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">PRIVATE COLLECTION</div>
+        <h1 id="page-title">谷子收纳</h1>
+      </div>
+      <div class="topbar-actions">
+        <button id="option-manager" class="manage-top-button" aria-label="管理分类与颜色">管理</button>
+        <button id="quick-add" class="icon-button primary" aria-label="新增物品">＋</button>
+      </div>
+    </header>
+
+    <main id="main-view" class="main-view" aria-live="polite"></main>
+
+    <nav class="bottom-nav" aria-label="主要导航">
+      <button class="nav-item active" data-tab="items">
+        <span class="nav-icon">▦</span><span>物品</span>
+      </button>
+      <button class="nav-item" data-tab="locations">
+        <span class="nav-icon">⌂</span><span>位置</span>
+      </button>
+      <button class="nav-item" data-tab="backup">
+        <span class="nav-icon">⇅</span><span>备份</span>
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <span class="nav-icon">⚙</span><span>设置</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="assertive"></div>
+  <input id="backup-file-input" type="file" accept=".gubackup,.zip,application/zip" hidden />
+
+  <script src="./jszip.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
