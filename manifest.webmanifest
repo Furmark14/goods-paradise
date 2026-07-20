@@ -1,7 +1,7 @@
 {
   "name": "谷子收纳",
   "short_name": "谷子收纳",
-  "description": "本地优先的谷子收纳、批量添加、批量编辑、批量删除与完整备份工具",
+  "description": "本地优先的谷子收纳、批量管理与兼容iPhone备份导入工具",
   "id": "./",
   "start_url": "./",
   "scope": "./",

@@ -20,7 +20,7 @@ import {
   getMeta
 } from './db.js';
 
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.5.1';
 const BACKUP_FORMAT = 'guzi-storage-backup';
 const BACKUP_SCHEMA_VERSION = 3;
 
