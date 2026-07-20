@@ -10,6 +10,7 @@ import {
   saveItemBundle,
   saveManyItemBundles,
   deleteItemCascade,
+  deleteManyItemsCascade,
   clearAllData,
   importDataBundle,
   ensureDefaultLocations,
@@ -19,7 +20,7 @@ import {
   getMeta
 } from './db.js';
 
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.5.0';
 const BACKUP_FORMAT = 'guzi-storage-backup';
 const BACKUP_SCHEMA_VERSION = 3;
 
@@ -789,6 +790,7 @@ function renderItemsView() {
           <button id="bulk-select-results" class="mini-button">全选当前 ${list.length} 条结果</button>
           <button id="bulk-clear-selection" class="mini-button">清空选择</button>
           <button id="bulk-edit-selected" class="button primary small" ${selectedCount ? '' : 'disabled'}>批量编辑</button>
+          <button id="bulk-delete-selected" class="button danger small" ${selectedCount ? '' : 'disabled'}>批量删除</button>
           <button id="bulk-exit" class="button secondary small">退出</button>
         </div>
       </section>
@@ -876,6 +878,7 @@ function renderItemsView() {
     renderItemsView();
   });
   mainView.querySelector('#bulk-edit-selected')?.addEventListener('click', openBatchEditSelected);
+  mainView.querySelector('#bulk-delete-selected')?.addEventListener('click', openBatchDeleteSelected);
   mainView.querySelector('#manage-options-inline')?.addEventListener('click', openOptionManager);
 
   const search = mainView.querySelector('#item-search');
@@ -1413,6 +1416,93 @@ async function openBatchEditSelected() {
     } catch (error) {
       console.error(error);
       toast(`批量编辑失败：${error.message}`, 'error', 5200);
+    } finally {
+      setLoading(false);
+    }
+  });
+}
+
+
+async function openBatchDeleteSelected() {
+  const selectedItems = state.items.filter(item => state.selectedItemIds.has(item.id));
+  if (!selectedItems.length) {
+    toast('请先选择需要删除的物品', 'error');
+    return;
+  }
+
+  const preview = selectedItems.slice(0, 8);
+  const remaining = Math.max(0, selectedItems.length - preview.length);
+  const modal = openModal(`
+    <form id="batch-delete-form">
+      <div class="modal-header sticky danger-header">
+        <div><div class="eyebrow">PERMANENT DELETE</div><h2>批量删除 ${selectedItems.length} 项</h2></div>
+        <button type="button" class="icon-button" data-close-modal>×</button>
+      </div>
+
+      <div class="modal-body">
+        <section class="batch-delete-warning">
+          <strong>物品记录、原图和缩略图将被永久删除。</strong>
+          <p>此操作不能撤销。大量卖货后删除前，建议先导出一次完整原图备份。</p>
+        </section>
+
+        <section class="batch-delete-preview">
+          ${preview.map(item => `
+            <div class="batch-delete-preview-row">
+              <span>${escapeHtml(item.name || '未命名')}</span>
+              <small>${escapeHtml(locationPath(item.locationId))} · ${escapeHtml(item.status || '未指定状态')}</small>
+            </div>
+          `).join('')}
+          ${remaining ? `<div class="batch-delete-more">另有 ${remaining} 项未展开</div>` : ''}
+        </section>
+
+        <label class="batch-delete-confirm-check">
+          <input id="batch-delete-check" type="checkbox">
+          <span>我确认这些物品已经出售或不再需要，并理解图片也会一并删除。</span>
+        </label>
+
+        <label class="field">
+          <span>请输入“删除”以继续</span>
+          <input id="batch-delete-phrase" autocomplete="off" placeholder="删除">
+        </label>
+      </div>
+
+      <div class="modal-actions sticky-bottom">
+        <button type="button" class="button secondary" data-close-modal>取消</button>
+        <button id="batch-delete-confirm" type="submit" class="button danger" disabled>永久删除 ${selectedItems.length} 项</button>
+      </div>
+    </form>
+  `, { wide: true });
+
+  const check = modal.root.querySelector('#batch-delete-check');
+  const phrase = modal.root.querySelector('#batch-delete-phrase');
+  const confirmButton = modal.root.querySelector('#batch-delete-confirm');
+
+  function refreshConfirmState() {
+    confirmButton.disabled = !(check.checked && phrase.value.trim() === '删除');
+  }
+
+  check.addEventListener('change', refreshConfirmState);
+  phrase.addEventListener('input', refreshConfirmState);
+
+  modal.root.querySelector('#batch-delete-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (confirmButton.disabled) return;
+
+    const ids = selectedItems.map(item => item.id);
+    setLoading(true, `正在永久删除 ${ids.length} 项…`);
+    try {
+      const result = await deleteManyItemsCascade(ids);
+      await reloadData();
+      modal.close();
+      state.bulkMode = false;
+      state.selectedItemIds.clear();
+      quickAdd.hidden = false;
+      optionManagerButton.hidden = false;
+      renderItemsView();
+      toast(`已删除 ${result.deletedItems} 项物品及其图片`, 'success', 4600);
+    } catch (error) {
+      console.error(error);
+      toast(`批量删除失败：${error.message}`, 'error', 5200);
     } finally {
       setLoading(false);
     }
@@ -2386,7 +2476,7 @@ async function renderSettingsView() {
 
     <section class="notice-card">
       <strong>本版本重点</strong>
-      <p>已支持批量添加、批量点选编辑、复数作品 / IP、分类颜色和完整备份。备份会同时保存全部词库与颜色设置。</p>
+      <p>已支持批量添加、批量点选编辑、批量永久删除、复数作品 / IP、分类颜色和完整备份。备份会同时保存全部词库与颜色设置。</p>
     </section>
   `;
 

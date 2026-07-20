@@ -541,3 +541,44 @@ input:focus, select:focus, textarea:focus { border-color: #8d8982; box-shadow: 0
   .batch-image-row { grid-template-columns: 72px minmax(0, 1fr) 28px; }
   .batch-image-row > img { width: 72px; height: 72px; }
 }
+
+
+/* v0.5：批量永久删除 */
+.danger-header { background: linear-gradient(180deg, #fff7f6, rgba(255,247,246,.96)); }
+.batch-delete-warning {
+  margin-bottom: 13px; padding: 14px;
+  border: 1px solid #dba8a2; border-radius: 14px;
+  background: #fff2f0; color: #6f2d27;
+}
+.batch-delete-warning strong { display: block; font-size: 14px; }
+.batch-delete-warning p { margin: 7px 0 0; font-size: 11px; line-height: 1.6; }
+.batch-delete-preview {
+  overflow: hidden; margin-bottom: 13px;
+  border: 1px solid var(--line); border-radius: 13px; background: var(--surface);
+}
+.batch-delete-preview-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border-bottom: 1px solid #ece9e5;
+}
+.batch-delete-preview-row span {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px; font-weight: 700;
+}
+.batch-delete-preview-row small {
+  flex: 0 0 auto; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--muted); font-size: 9px;
+}
+.batch-delete-preview-row:last-child { border-bottom: 0; }
+.batch-delete-more {
+  padding: 10px 12px; text-align: center; color: var(--muted); font-size: 10px;
+  background: #f3f1ed;
+}
+.batch-delete-confirm-check {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin: 0 0 13px; padding: 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: #faf9f7;
+  color: var(--text); font-size: 11px; line-height: 1.55;
+}
+.batch-delete-confirm-check input {
+  width: 21px; min-height: 21px; margin: 0; padding: 0; flex: 0 0 auto;
+}

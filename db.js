@@ -216,6 +216,34 @@ export async function deleteItemCascade(itemId) {
   await transactionDone(tx);
 }
 
+export async function deleteManyItemsCascade(itemIds) {
+  const ids = [...new Set((itemIds || []).filter(Boolean))];
+  if (!ids.length) return { deletedItems: 0, deletedMedia: 0 };
+
+  const db = await openDatabase();
+  const tx = db.transaction(['items', 'media'], 'readwrite');
+  const itemStore = tx.objectStore('items');
+  const mediaStore = tx.objectStore('media');
+  const mediaIndex = mediaStore.index('itemId');
+  let deletedMedia = 0;
+
+  for (const itemId of ids) {
+    itemStore.delete(itemId);
+    const request = mediaIndex.openCursor(IDBKeyRange.only(itemId));
+    request.onsuccess = event => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete();
+        deletedMedia += 1;
+        cursor.continue();
+      }
+    };
+  }
+
+  await transactionDone(tx);
+  return { deletedItems: ids.length, deletedMedia };
+}
+
 export async function countStore(storeName) {
   const db = await openDatabase();
   const tx = db.transaction(storeName, 'readonly');
