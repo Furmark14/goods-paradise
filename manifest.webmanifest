@@ -1,7 +1,7 @@
 {
-  "name": "谷子收纳",
-  "short_name": "谷子收纳",
-  "description": "本地优先的谷子收纳、批量管理与兼容iPhone备份导入工具",
+  "name": "Goods Paradise 谷子天国",
+  "short_name": "谷子天国",
+  "description": "Goods Paradise 谷子天国：本地优先的谷子收藏、图片与批量管理工具",
   "id": "./",
   "start_url": "./",
   "scope": "./",

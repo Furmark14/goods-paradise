@@ -11,6 +11,7 @@ import {
   saveManyItemBundles,
   deleteItemCascade,
   deleteManyItemsCascade,
+  countStore,
   clearAllData,
   importDataBundle,
   ensureDefaultLocations,
@@ -20,7 +21,7 @@ import {
   getMeta
 } from './db.js';
 
-const APP_VERSION = '0.5.1';
+const APP_VERSION = '0.6.0';
 const BACKUP_FORMAT = 'guzi-storage-backup';
 const BACKUP_SCHEMA_VERSION = 3;
 
@@ -34,6 +35,8 @@ const state = {
   sort: 'updated-desc',
   shownCount: 60,
   viewMode: 'grid',
+  gridColumns: Math.min(5, Math.max(2, Number(localStorage.getItem('goods-paradise-grid-columns') || 2))),
+  imageCount: 0,
   bulkMode: false,
   selectedItemIds: new Set(),
   pendingImport: null,
@@ -609,10 +612,11 @@ function openLocationManager() {
 }
 
 async function reloadData() {
-  [state.items, state.locations, state.catalogs] = await Promise.all([
+  [state.items, state.locations, state.catalogs, state.imageCount] = await Promise.all([
     getAll('items'),
     getAll('locations'),
-    getAll('catalogs')
+    getAll('catalogs'),
+    countStore('media')
   ]);
   state.catalogs = await initializeCatalogs(state.items);
   state.items = state.items.map(item => ({
@@ -659,7 +663,7 @@ function setTab(tab) {
   document.querySelectorAll('.nav-item').forEach(button => {
     button.classList.toggle('active', button.dataset.tab === tab);
   });
-  const titles = { items: '谷子收纳', locations: '存放位置', backup: '备份与恢复', settings: '设置' };
+  const titles = { items: 'Goods Paradise 谷子天国', locations: '存放位置', backup: '备份与恢复', settings: '设置' };
   pageTitle.textContent = titles[tab];
   quickAdd.hidden = !['items', 'locations'].includes(tab) || state.bulkMode;
   optionManagerButton.hidden = tab !== 'items' || state.bulkMode;
@@ -762,14 +766,12 @@ function renderItemsView() {
   const types = uniqueSorted(state.items.map(item => item.type));
   const list = filteredItems();
   const visible = list.slice(0, state.shownCount);
-  const totalQuantity = state.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const selectedCount = state.selectedItemIds.size;
 
   mainView.innerHTML = `
-    <section class="summary-strip">
+    <section class="summary-strip two-column">
       <div><strong>${formatNumber(state.items.length)}</strong><span>条记录</span></div>
-      <div><strong>${formatNumber(totalQuantity)}</strong><span>件物品</span></div>
-      <div><strong>${formatNumber(state.locations.length)}</strong><span>个位置</span></div>
+      <div><strong>${formatNumber(state.imageCount)}</strong><span>张图片</span></div>
     </section>
 
     <section class="item-action-grid">
@@ -831,13 +833,23 @@ function renderItemsView() {
       </div>
     </section>
 
-    <div class="section-heading">
+    <div class="section-heading item-display-heading">
       <div><h2>物品</h2><span>${formatNumber(list.length)} 条结果</span></div>
-      <button id="toggle-view" class="text-button">${state.viewMode === 'grid' ? '切换列表' : '切换网格'}</button>
+      <div class="display-controls">
+        ${state.viewMode === 'grid' ? `
+          <label class="grid-column-control">
+            <span>每行</span>
+            <select id="grid-column-count" aria-label="选择每行显示数量">
+              ${[2,3,4,5].map(value => `<option value="${value}" ${state.gridColumns === value ? 'selected' : ''}>${value} 个</option>`).join('')}
+            </select>
+          </label>
+        ` : ''}
+        <button id="toggle-view" class="text-button">${state.viewMode === 'grid' ? '切换列表' : '切换网格'}</button>
+      </div>
     </div>
 
     ${visible.length ? `
-      <section class="items-${state.viewMode}">
+      <section class="items-${state.viewMode}" ${state.viewMode === 'grid' ? `style="--grid-columns:${state.gridColumns}"` : ''}>
         ${visible.map(itemCard).join('')}
       </section>
       ${visible.length < list.length ? `<button id="load-more" class="button secondary full-width">继续加载（剩余 ${list.length - visible.length} 条）</button>` : ''}
@@ -909,6 +921,11 @@ function renderItemsView() {
   });
   mainView.querySelector('#sort-items')?.addEventListener('change', event => {
     state.sort = event.target.value;
+    renderItemsView();
+  });
+  mainView.querySelector('#grid-column-count')?.addEventListener('change', event => {
+    state.gridColumns = Math.min(5, Math.max(2, Number(event.target.value || 2)));
+    localStorage.setItem('goods-paradise-grid-columns', String(state.gridColumns));
     renderItemsView();
   });
   mainView.querySelector('#toggle-view')?.addEventListener('click', () => {
@@ -2191,7 +2208,7 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-async function exportBackup(mode = 'full', prefix = '谷子收纳') {
+async function exportBackup(mode = 'full', prefix = 'Goods Paradise_谷子天国') {
   if (!window.JSZip) {
     toast('压缩组件未加载，请刷新页面后重试', 'error');
     return null;
@@ -2302,7 +2319,7 @@ async function prepareBackupImport(file) {
   try {
     const zip = await JSZip.loadAsync(file);
     const manifest = await readJsonFromZip(zip, 'manifest.json');
-    if (manifest.format !== BACKUP_FORMAT) throw new Error('不是可识别的谷子收纳备份');
+    if (manifest.format !== BACKUP_FORMAT) throw new Error('不是可识别的 Goods Paradise 谷子天国备份');
     if (Number(manifest.schemaVersion) > BACKUP_SCHEMA_VERSION) throw new Error('备份版本高于当前软件，请先升级软件');
     const catalogsEntry = zip.file('data/catalogs.json');
     const catalogsProvided = Boolean(catalogsEntry);
@@ -2382,7 +2399,7 @@ async function executeBackupImport(mode, safetyBackup) {
   try {
     if (safetyBackup && state.items.length) {
       updateLoading('正在生成导入前安全备份…');
-      await exportBackup('full', '谷子收纳_导入前安全备份');
+      await exportBackup('full', 'Goods Paradise_谷子天国_导入前安全备份');
       setLoading(true, '正在继续导入…');
     }
 
@@ -2442,7 +2459,7 @@ async function renderSettingsView() {
   mainView.innerHTML = `
     <section class="settings-list">
       <div class="settings-row">
-        <div><strong>软件版本</strong><span>谷子收纳 PWA v${APP_VERSION}</span></div>
+        <div><strong>软件版本</strong><span>Goods Paradise 谷子天国 v${APP_VERSION}</span></div>
         <span class="status-pill">${standalone ? '主屏幕模式' : '浏览器模式'}</span>
       </div>
       <div class="settings-row column">
@@ -2542,7 +2559,7 @@ async function exportDiagnostics() {
       thumbnails: media.filter(record => record.thumbnailBlob).length
     }
   };
-  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `谷子收纳_诊断_${Date.now()}.json`);
+  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `Goods Paradise_谷子天国_诊断_${Date.now()}.json`);
 }
 
 async function clearLocalData() {

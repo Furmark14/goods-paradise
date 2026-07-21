@@ -582,3 +582,45 @@ input:focus, select:focus, textarea:focus { border-color: #8d8982; box-shadow: 0
 .batch-delete-confirm-check input {
   width: 21px; min-height: 21px; margin: 0; padding: 0; flex: 0 0 auto;
 }
+
+
+/* v0.6：品牌名称、双统计栏、可调网格列数 */
+.topbar h1 {
+  max-width: min(62vw, 520px);
+  font-size: clamp(17px, 4.5vw, 23px);
+  line-height: 1.08;
+}
+.summary-strip.two-column { grid-template-columns: repeat(2, 1fr); }
+.items-grid {
+  grid-template-columns: repeat(var(--grid-columns, 2), minmax(0, 1fr));
+  gap: clamp(5px, 2.2vw, 12px);
+}
+.item-display-heading { gap: 10px; align-items: center; }
+.display-controls { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.grid-column-control {
+  display: flex; align-items: center; gap: 5px;
+  color: var(--muted); font-size: 10px; white-space: nowrap;
+}
+.grid-column-control select {
+  width: auto; min-width: 66px; min-height: 34px;
+  padding: 6px 8px; border-radius: 9px; font-size: 11px;
+}
+.items-grid[style*="--grid-columns:4"] .item-card-body,
+.items-grid[style*="--grid-columns:5"] .item-card-body { padding: 7px; }
+.items-grid[style*="--grid-columns:4"] .item-card h3,
+.items-grid[style*="--grid-columns:5"] .item-card h3 {
+  font-size: 10px; line-height: 1.3; -webkit-line-clamp: 2;
+}
+.items-grid[style*="--grid-columns:4"] .chip-row,
+.items-grid[style*="--grid-columns:5"] .chip-row,
+.items-grid[style*="--grid-columns:4"] .item-meta-line,
+.items-grid[style*="--grid-columns:5"] .item-meta-line { display: none; }
+.items-grid[style*="--grid-columns:5"] .status-light {
+  width: 12px; height: 12px; left: 5px; top: 5px; border-width: 1px;
+}
+.items-grid[style*="--grid-columns:5"] .quantity-badge {
+  right: 4px; top: 4px; padding: 2px 4px; font-size: 8px;
+}
+@media (min-width: 720px) {
+  .items-grid { grid-template-columns: repeat(var(--grid-columns, 2), minmax(0, 1fr)); }
+}

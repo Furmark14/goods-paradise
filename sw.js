@@ -1,4 +1,4 @@
-const CACHE_NAME = 'guzi-storage-v0.5.1';
+const CACHE_NAME = 'goods-paradise-v0.6.0';
 const APP_SHELL = [
   './',
   './index.html',
